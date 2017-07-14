@@ -1,0 +1,365 @@
+//============================================================================================
+//============================================================================================
+//********************************************************************************************
+// this SOP file is introduce the initial and necessary tools if you first get the 
+// TK1 board, then follow the SOP step by step will complete setting before program
+// code or any work.
+// the necessary tools include "opencv2.4.12, caffe, CUDA6.5 for arm, dlib, tbb, clm,
+// , gendercode, flycap2"
+// copyright @ XYZrobot inc. 2016
+//*********************************************************************************************
+//=============================================================================================
+//=============================================================================================
+
+
+/**TK1**/
+
+### reinstall TK1 to "Linux For Tegra R21.4"
+### first time open the tk1 have installed the L4T 21.4
+    http://developer.download.nvidia.com/embedded/L4T/r21_Release_v4.0/l4t_quick_start_guide.txt
+=============================================================================================
+=============================================================================================
+
+/**CUDA**/
+
+### install CUDA
+http://elinux.org/Jetson/Installing_CUDA
+
+### Download cuda-6.5v-linux
+https://developer.nvidia.com/cuda-toolkit-65
+http://developer.download.nvidia.com/embedded/OpenCV/L4T_21.1/README.txt
+=============================================================================================
+=============================================================================================
+
+/**OpenCV**/
+##Start from Option2)Building the public OpenCV library from source:
+##install OpenCV
+http://elinux.org/Jetson/Installing_OpenCV
+
+##Download opencv-2.4.12-linux
+http://opencv.org/downloads.html
+
+
+$cmake -DOPENCV_EXTRA_MODULES_PATH=~/opencv_contrib-${VERSION}/modules ..
+$ccmake ..
+
+   ##if you key in the "ccmake .." you will see as follow:
+    #customize cmake (cd build)(ccmake ..) 
+
+
+    #  BUILD_SHARED_LIBS                ON                                           
+    #  BUILD_TBB                        ON  
+    #  CUDA_ARCH_BIN                    3.2   (tk1-> 3.2,x86 PC->5)                                         
+    #  CUDA_ARCH_PTX       
+    #  INSTALL_TESTS                    ON     
+    #  WITH_CUDA                        ON 
+    #  WITH_TBB                         ON   
+    #  WITH_VTK                         OFF          
+
+ ##enter twice "c" and one "g" 
+
+$make
+
+$sudo make install
+
+=============================================================================================
+=============================================================================================
+
+/**Caffe_1**/
+
+### Dont use Cudnn(For now)
+    http://jetsonhacks.com/2015/01/20/nvidia-jetson-tk1-cudnn-install-caffe-example/
+
+### install caffe
+### libboost-filesystem-dev possible missing
+  $ sudo add-apt-repository universe
+  
+  $ sudo apt-get update
+  
+  $ sudo apt-get install libprotobuf-dev protobuf-compiler gfortran \
+    libboost-dev cmake libleveldb-dev libsnappy-dev \
+    libboost-thread-dev libboost-system-dev libboost-filesystem-dev\
+    libatlas-base-dev libhdf5-serial-dev libgflags-dev \
+    libgoogle-glog-dev liblmdb-dev -y
+
+  $ sudo usermod -a -G video $USER
+
+### Git clone Caffe
+  $ sudo apt-get install -y git
+  
+  $ git clone https://github.com/BVLC/caffe.git
+  
+  $ cd caffe && git checkout dev
+  
+  $ cp Makefile.config.example Makefile.config 
+
+  $ gedit Makefile.config
+    change to " ""#"" USE_CUDNN := 1"
+
+*********************************************************************************************
+
+/**Caffe_2**/
+
+### https://github.com/BVLC/caffe/pull/1667
+
+  $ cd
+  $ cd caffe && mkdir cmake_build && cd cmake_build
+  $ cmake .. -DBUILD_SHARED_LIB=ON
+
+#Verify that cmake found everything and in proper locations. 
+ After can run make -j 12 right now or better do this:
+
+  $ ccmake ..
+  $ cuDNN OFF
+
+### switch to debug
+  $ cmake . -DCMAKE_BUILD_TYPE=Debug  
+ 
+### installs by default to build_dir/install
+  $ make -j 4 && make install         
+
+### switch to release  
+  $ cmake . -DCMAKE_BUILD_TYPE=Release   
+
+### doesn’t overwrite debug install
+  $ make -j 4 && make install          
+
+/* 4 = 4 threads */
+
+=============================================================================================
+=============================================================================================
+
+/**Dlib**/
+
+# Download dlib-18.18
+
+#put "dlib-18.18" file to "home/ubuntu/"
+
+
+$ cd dlib-18.18/dlib
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+$ sudo make install
+
+
+=============================================================================================
+=============================================================================================
+
+/**Gender Code**/
+
+#delete CMakeFiles, dlib_build, CMakeCache.txt, cmake_install.cmake, Makefile
+
+$ cd gender_classification
+$ cmake .
+
+#add caffe "model" in 1st floor folder
+
+#fix sop.sh in the following line
+#cover the original line
+#copy as follows into file, then overlap original 
+./gender_classification model/deploy_gender.prototxt model/gender_net.caffemodel model/mean.binaryproto model/labels.txt
+
+$ sudo chmod +x sop.sh #give it execute permission
+
+#fix face_detection_and_crop.cpp xml path
+
+$ make -j4  #compile using 4 threads
+
+$./sop.sh
+
+=============================================================================================
+================================ down is Face Recognition ===================================
+=============================================================================================
+
+/**TBB**/
+
+$ sudo apt-get install libtbb.dev
+
+=============================================================================================
+=============================================================================================
+
+/**CLM**/
+
+##according to the path in "CMakeLists.txt",
+##rearrange the project file to fit it.
+
+##add folder "src" in 1st floor folder and put all .cpp in
+##add folder "inculde" in 1st floor folder and put all .hpp or .h in
+##move main cpp to 1st floor folder
+##move "model" to 1st floor folder
+##move "Test" to 1st floor folder
+##add face_database1
+
+
+=============================================================================================
+#### enter the include and src file, then open all file do:
+#show off .h that could use only in windows
+//#include <windows.h> 
+//#include <io.h>
+//#include <direct.h>
+//#include <opencv.hpp>
+
+
+#### enter the src file, the open two .cpp file do:
+     
+     fix #include <tbb\parallel_for.h> to #include <tbb/parallel_for.h>
+
+
+### enter the include file,then in the stdafx.h file add "//"before the #include...
+   //#include <tchar.h>
+   //#include "targetver.h"
+
+=============================================================================================
+#### in "CMakeLists.txt" file ########
+  #define project name
+   project( Recognition_linux ) 
+
+  #change the main cpp name and path
+   add_executable( Recognition_linux CLM_multitracking.cpp ${DIR_SRCS})
+
+  #fix the project name
+   target_link_libraries( Recognition_linux ${OpenCV_LIBS} ${TBB_LIBRARY} ${Boost_LIBRARIES} dlib)
+
+=============================================================================================
+
+   $ cd Recognition_linux/
+   $ cmake .
+   $ make -j4
+
+   $ ./Recognition_linux model1/deploy_gender.prototxt model1/gender_net.caffemodel model1/mean.binaryproto model1/labels.txt model1/age/deploy_age.prototxt model1/age/age_net.caffemodel model1/age/mean.binaryproto model1/age/age_labels.txt
+=============================================================================================
+=============================================================================================
+=============================================================================================
+
+/**FlyCapture2**/
+
+#http://www.ptgrey.com/support/downloads/10398
+#Check USB3 support : libgtkmm-2.4-dev libglademm-2.4-dev libusb-1.0
+$sudo apt-get install libraw1394-11 libgtkmm-2.4-1c2a libglademm-2.4-1c2a libgtkglextmm-x11-1.2-dev libgtkglextmm-x11-1.2 libusb-1.0-0
+
+sudo apt-get -f install
+
+#install FlyCapture2
+Download:
+	BlackFly
+	BFLY-U3-03S2M-CS Blackfly
+ 	FlyCapture 2.9.3.15 SDK - ARMHF (32-bit) — 03/29/2016 - 17.1206MB
+http://www.ptgrey.com/KB/10357
+# Dont need
+#https://www.youtube.com/watch?v=ts4fk5j7mfk
+
+$ cd flycapture2-2.11.3.121-amd64
+$ sudo apt-get install libglademm-2.4-1v5:i386
+$ sudo apt-get install libgtkmm-2.4-1v5
+$ sudo apt-get -f install
+$ sudo sh install_flycapture.sh
+
+
+
+#test FlyCapture2
+./flycapture-name/bin/FlyCap2
+#add config button , change configuration
+#change FPS && image size ******[ resolution need small 1920x1080]********* 
+
+#CMakeList
+#include Point Grey
+include_directories(/home/ubuntu/flycapture.2.9.3.43_armhf/include)
+link_directories(/home/ubuntu/flycapture.2.9.3.43_armhf/lib)
+target_link_libraries( Recognition_linux flycapture)
+
+#Qt build
+INCLUDEPATH += /home/ubuntu/flycapture.2.9.3.43_armhf/include
+LIBS += -L/home/ubuntu/flycapture.2.9.3.43_armhf/lib
+LIBS += -lflycapture
+
+#in main.cpp
+#include "FlyCaptureWrapper.h"
+
+#############flycap2--test###################
+$ cd flycapture.2.9.3.43_armhf/bin
+$ ./FlyCap2
+
+==============================================================================================
+============================== LIPS 3Dcamera SOP =============================================
+
+#install TK1 LIPS deiver
+#change the outer name "LIPS ToF Install Package(TK1_Linux)" to "LIPS"(or other name)
+ $ cd LIPS/LIPS_Bin_Linux_TK1
+ $ ./install.sh
+ 
+ $ cd
+ $ cd /boot/extlinux/
+ $ sudo vi extlinux.conf
+ #key in "a", and in the last  
+ #cancel the last line word to "apt "
+ #add uvcvideo.quirks=640
+ #key in "esc",then key ":wq"
+
+ $ sudo reboot
+ $ cd LIPS/LIPS_Bin_Linux_TK1/Samples/Bin/Linux/Arm-Release/
+ $ sudo ./NiViewer
+
+
+===============================================================================================
+============================== how to look for GPU performance ================================
+
+$ top
+$ sudo ./tegrastats     #GR3D (GPU)
+
+
+
+
+==============================================================================================
+============================ tk1 cpu open ====================================================
+##change the high level permission
+$ sudo chmod +x maxgpu.sh
+
+
+$ sudo su
+echo 0 > /sys/devices/system/cpu/cpuquiet/tegra_cpuquiet/enable
+echo 1 > /sys/devices/system/cpu/cpu0/online
+echo 1 > /sys/devices/system/cpu/cpu1/online
+echo 1 > /sys/devices/system/cpu/cpu2/online
+echo 1 > /sys/devices/system/cpu/cpu3/online
+echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+#reference website
+http://elinux.org/Jetson/Performance
+
+
+##increase GPU performance and open fully CPU performance when open the power
+sudo vi /etc/rc.local
+##add the as follows before exit
+ echo 0 > /sys/devices/system/cpu/cpuquiet/tegra_cpuquiet/enable
+ echo 852000000 > /sys/kernel/debug/clock/override.gbus/rate
+ echo 1 > /sys/kernel/debug/clock/override.gbus/state
+
+##search GPU HZ
+$ cat /sys/kernel/debug/clock/gbus/rate
+
+
+
+==============================================================================================
+============================= install Qt on TK1 ==============================================
+
+### http://jetsonhacks.com/2015/04/22/install-qt-creator-on-nvidia-jetson-tk1/
+
+$ sudo apt-get install build-essential qt5-default qtcreator -y
+ 
+##open a new project
+##left top " tools -> options -> Build & Run -> compilers -> gcc "
+
+
+
+
+
+
+
+
+
+
+
+
+
